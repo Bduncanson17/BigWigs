@@ -189,6 +189,7 @@ local timer = {
 	firstCurse = 5,
 	curse = 30,
 	getNextSpore = 20,
+	timerIcon = = {9, 13}
 }
 local icon = {
 	softEnrage = "Spell_Shadow_UnholyFrenzy",
@@ -201,6 +202,7 @@ local syncName = {
 	doom = "LoathebDoom"..module.revision,
 	spore = "LoathebSporeSpawn"..module.revision,
 	curse = "LoathebRemoveCurse"..module.revision,
+	sporeGroup = "LoathebSproreGroups"..module.revision,
 }
 local consumableslist = {L["shadowpot"],L["noconsumable"],L["bandage"],L["wrtorhs"],L["shadowpotandbandage"],L["noconsumable"],L["bandage"],L["noconsumable"],L["wrtorhs"]}
 local numSpore = 0 -- how many spores have been spawned
@@ -217,6 +219,7 @@ function module:OnEnable()
 	self:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_FRIENDLYPLAYER_DAMAGE", "Event")
 	self:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_PARTY_DAMAGE", "Event")
 	self:RegisterEvent("CHAT_MSG_SPELL_BREAK_AURA", "CurseEvent")
+	self:RegisterEvent("RAID_ROSTER_UPDATE","PARTY_MEMBERS_CHANGED",0.2, "ScanFullRoster")
 
 	-- 2: Doom and SporeSpawn versioned up because of the sync including the
 	-- doom/spore count now, so we don't hold back the counter.
@@ -261,10 +264,18 @@ function module:OnSetup()
 	self.consumableseq = 0
 	numSpore = 0 -- how many spores have been spawned
 	numDoom = 0 -- how many dooms have been casted
+	self.groupMembers = {{},{},{},{},{},{},{},{}}    
 	timer.doom = timer.firstDoom
 
 	self.frameIcon:Hide()
 	self.frameIcon2:Hide()
+	
+	for i = 1, GetNumRaidMembers(), 1 do
+		local name, _, subgroup = GetRaidRosterInfo(i)
+		self.groupMembers[subgroup] = {name = "raid"..i}
+		
+		
+	
 end
 
 -- called after boss is engaged
@@ -296,6 +307,7 @@ end
 function module:OnDisengage()
 	self.frameIcon:Hide()
 	self.frameIcon2:Hide()
+	self.raidMembers = {}
 end
 
 
@@ -371,6 +383,35 @@ function module:SoftEnrage()
 	timer.doom = timer.doomShort -- reduce doom timer from 30s to 15s
 end
 
+function module:SetRaidIcon(raidIndex, iconNumber, setTimer, removeTrigger)
+	if not self.db.profile.place or not player then 
+		return 
+	end
+		
+	local icon = self.icontonumber[L["skull"]]
+		
+	if iconnumber and 'number' == type(iconNumber) and iconNumber >= 1 and iconNumber <= 8 then
+		icon = iconnumber
+			
+	elseif self.icontonumber[self.db.profile.icon] then
+		icon = self.icontonumber[self.db.profile.icon]
+	end
+		
+	
+	SetRaidTargetIcon(raidIndex, iconNumber)
+	
+function module:SporeGroupIcons(sporeGroup)
+	
+	count = 1
+	for _, v in pairs(raidMembers[sporeGroup])
+		count = count + 1
+		self:SetRaidIcon(v,count)
+		
+			
+	
+	
+	
+	
 function module:Spore()
 	numSpore = numSpore + 1
 
