@@ -123,13 +123,12 @@ L:RegisterTranslations("esES", function() return {
 module.revision = 20005 -- To be overridden by the module!
 module.enabletrigger = {thane, mograine, zeliek, blaumeux} -- string or table {boss, add1, add2}
 --module.wipemobs = { L["add_name"] } -- adds which will be considered in CheckForEngage
-module.toggleoptions = {"mark", "shieldwall", -1, "meteor", "void", "wrath", "bosskill"}
+module.toggleoptions = {"mark", "shieldwall", -1, "meteor", "void", "wrath", "bosskill", "repeatThree"}
 
 
 -- locals
 local timer = {
-	firstMark = 20,
-	mark = 12,
+	mark = {20,12}
 	firstMeteor = 30,
 	meteor = {12,15},
 	firstWrath = 12,
@@ -137,6 +136,7 @@ local timer = {
 	firstVoid = 12,
 	void = {12,15},
 	shieldwall = 20,
+	markCount = {21,12}
 }
 local icon = {
 	mark = "Spell_Shadow_CurseOfAchimonde",
@@ -180,7 +180,9 @@ end
 -- called after module is enabled and after each wipe
 function module:OnSetup()
 	self:RegisterEvent("CHAT_MSG_COMBAT_HOSTILE_DEATH")
-
+	self.markNumber = {1,2,3}
+	self.nextMark = 0
+	self.currMark = 0
 	self.marks = 0
 	self.deaths = 0
 
@@ -191,9 +193,13 @@ end
 function module:OnEngage()
 	self.marks = 0
 	if self.db.profile.mark then
+		if self.db.profile.repeatThree then
+			self.nextMark = self.markNumber[math.mod(self.marks,3)]
+			self.currMark = 0
+		end	
 		self:Message(L["startwarn"], "Attention")
-		self:Bar(string.format( L["markbar"], self.marks + 1), timer.firstMark, icon.mark) -- 18,5 sec on feenix
-		self:DelayedMessage(timer.firstMark - 5, string.format( L["mark_warn_5"], self.marks + 1), "Urgent")
+		self:Bar(string.format( L["markbar"], self.nextMark), timer.mark[0], icon.mark) -- 18,5 sec on feenix
+		self:DelayedMessage(timer.mark[0] - 5, string.format( L["mark_warn_5"], self.nextMark), "Urgent")
 	end
 	if self.db.profile.meteor then
 		self:Bar(L["meteorbar"], timer.firstMeteor, icon.meteor)
@@ -279,12 +285,22 @@ end
 ------------------------------
 
 function module:Mark()
-	self:RemoveBar(string.format(L["markbar"], self.marks))
+	self:RemoveBar(string.format(L["markbar"], currMark))
 	self.marks = self.marks + 1
+	self:DelayedMessage(1, string.format( L["mark_warn_5"], self.mark), "Twilight") 
+	
 	if self.db.profile.mark then
-		self:Message(string.format(L["mark_warn"], self.marks), "Important")
-		self:Bar(string.format(L["markbar"], self.marks + 1), timer.mark, icon.mark)
-		self:DelayedMessage(timer.mark - 5, string.format( L["mark_warn_5"], self.marks + 1), "Urgent")
+		if self.db.profile.repeatThree then
+			self.currMark[math.mod(self.mark-1,3)]
+			self.nextMark = self.markNumber[math.mod(self.marks, 3)]
+		else
+			self.currMark = self.marks
+			self.nextMark = curr.mark + 1
+		end 
+		self:Message(string.format(L["mark_warn"], self.currMark), "Important")
+		self:Bar(string.format(L["markbar"], self.nextMark), timer.mark[1], icon.mark)
+		self:DelayedMessage(timer.mark[1] - 5, string.format( L["mark_warn_5"], self.nextMark), "Urgent")
+		
 	end
 end
 
